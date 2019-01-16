@@ -16,6 +16,31 @@ const timeout = parseInt(options.timeout || 10000);
 
 //////////
 
+const banner = `
+
+                      ':ol.
+                .;oOXMMMMMk
+          .;lkKWMWKkl;.'MMM'
+    .,lxKWMMXkl;.       xMMKc,.
+  ,WMMXko;.             .NMMWMMWXOdc,.
+  .WMM'                  lMMX .,cdOXWMMXOdc,.
+   lMM0                  ,WMMc       .,cd0NMMMX,
+    NMM;           .,lkXMMW0d.             .MMM'
+    cMMX      .;oONMMMMo;.                 cMMK
+     XMMl.:d0WMMXNMMMMMKxl;.               KMMc
+     ;MMMMWKxc'  ,MMW;:okXMMMXko:.        ,MMW
+      ;l:.        kMMd     .;OMMMMMNOd:'  xMMx
+                  .WMM.      xMMk.;lkKWMMNWMM'
+                   lMM0      NMM;      .,cxkl
+                    XMMc    ,MMW
+                    ,WMO    dMMO
+                            XMMc
+                            lkd
+
+`;
+
+//////////
+
 function Server() {
   socket.on('message', (msg, rinfo) => {
     socket.send(msg, rinfo.port, rinfo.address);
@@ -23,6 +48,7 @@ function Server() {
 
   socket.on('listening', () => {
     const address = socket.address();
+    console.log(banner);
     console.log(`Picket test server listening on ${address.address}:${address.port}`);
   });
 
@@ -94,6 +120,8 @@ function Client() {
   });
 
   socket.on('listening', () => {
+    console.log(banner);
+    console.log('Picket sending %d to %s:%d...', count, target, port);
     start = Date.now();
     setImmediate(send);
   });
