@@ -129,7 +129,9 @@ function Client() {
     }
     sequence++;
 
-    buffer.fill(sequence);
+    for (const key of buffer.keys()) {
+      buffer[key] = sequence + key;
+    }
 
     elapsed = Date.now();
 
