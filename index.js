@@ -6,15 +6,44 @@ const socket = dgram.createSocket('udp4');
 
 const barrkeep = require('barrkeep');
 const minimist = require('minimist');
+
+//////////
+
 const options = minimist(process.argv.slice(2));
 
-const target = options.target || '192.168.0.2';
-const port = parseInt(options.port || 11111);
+const target = options.target || '192.168.0.100';
+const targetPort = parseInt(options.port || 11111);
+const listenPort = parseInt(options.listen || 11112);
+
 const size = parseInt(options.size || 1000);
-const count = parseInt(options.count || 100);
+
+let count = parseInt(options.count || 100);
+let time = 0;
+
+if (options.time) {
+  const duration = options.time;
+
+  count = -1;
+  time = 0;
+
+  duration.replace(/(\d+)ms\b/, function(match, p1) {
+    time += parseInt(p1);
+  }).replace(/(\d+)[sS]\b/, function(match, p1) {
+    time += parseInt(p1) * 1000;
+  }).replace(/(\d+)[mM]\b/, function(match, p1) {
+    time += parseInt(p1) * 1000 * 60;
+  }).replace(/(\d+)[hH]\b/, function(match, p1) {
+    time += parseInt(p1) * 1000 * 60 * 60;
+  }).replace(/(\d+)[dD]\b/, function(match, p1) {
+    time += parseInt(p1) * 1000 * 60 * 60 * 24;
+  });
+}
+
 const timeout = parseInt(options.timeout || 10000);
 
 //////////
+
+const version = require('./package.json').version;
 
 const banner = `
 
@@ -37,13 +66,15 @@ const banner = `
                             XMMc
                             lkd
 
+Picket Packet Tester v${ version }
+
 `;
 
 //////////
 
 function Server() {
   socket.on('message', (msg, rinfo) => {
-    socket.send(msg, rinfo.port, rinfo.address);
+    socket.send(msg, listenPort, rinfo.address);
   });
 
   socket.on('listening', () => {
@@ -52,7 +83,7 @@ function Server() {
     console.log(`Picket test server listening on ${address.address}:${address.port}`);
   });
 
-  socket.bind(port);
+  socket.bind(targetPort);
 }
 
 ///////////
@@ -66,19 +97,19 @@ function Client() {
   let corrupt = 0;
   let dropped = 0;
 
-  let time = 0;
+  let elapsed = 0;
   let start = 0;
 
   let dropCheck = -1;
 
   function summary() {
-    const totalTime = Date.now() - start;
-    let speed = Math.floor((received * size * 8) / (totalTime / 1000));
+    const totalElapsed = Date.now() - start;
+    let speed = Math.floor((received * size * 8) / (totalElapsed / 1000));
     speed = barrkeep.formatBytes(speed).replace('Bytes', 'B').
       replace('B', 'bps').
       replace(/\s/g, '');
 
-    console.log('Done.\n\n%d packets sent in %dms', sequence, totalTime);
+    console.log('Done.\n\n%d packets sent in %dms', sequence, totalElapsed);
     console.log('%d received, %d corrupt, %d dropped', received, corrupt, dropped);
     console.log('Speed: %s', speed);
 
@@ -92,24 +123,26 @@ function Client() {
   }
 
   function send() {
-    if (sequence >= count) {
+    if ((count !== -1 && sequence >= count) ||
+        (time !== 0 && (Date.now() - start) > time)) {
       return summary();
     }
     sequence++;
 
     buffer.fill(sequence);
 
-    time = Date.now();
+    elapsed = Date.now();
 
     dropCheck = setTimeout(drop, timeout);
-    socket.send(buffer, port, target);
+    socket.send(buffer, targetPort, target);
   }
 
   socket.on('message', (msg) => {
     clearTimeout(dropCheck);
 
     if (buffer.compare(msg) === 0) {
-      //console.log('Packet #%d, %dms', sequence, Date.now() - time);
+      elapsed = Date.now() - elapsed;
+      //console.log('Packet #%d, %dms', sequence, elapsed);
       received++;
     } else {
       corrupt++;
@@ -121,14 +154,18 @@ function Client() {
 
   socket.on('listening', () => {
     console.log(banner);
-    console.log('Picket sending %d to %s:%d...', count, target, port);
+    if (count === -1) {
+      console.log('Picket sending for %s to %s:%d...', options.time, target, targetPort);
+    } else {
+      console.log('Picket sending %d to %s:%d...', count, target, targetPort);
+    }
     start = Date.now();
     setImmediate(send);
   });
 
   process.on('SIGINT', summary);
 
-  socket.bind(port);
+  socket.bind(listenPort);
 }
 
 //////////

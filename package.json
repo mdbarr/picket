@@ -1,6 +1,6 @@
 {
   "name": "picket",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple UDP packet send/receive tester",
   "main": "index.js",
   "repository": "git@github.com:mdbarr/picket.git",
