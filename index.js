@@ -102,6 +102,9 @@ function Client() {
 
   let dropCheck = -1;
 
+  let minimumTime = Infinity;
+  let maximumTime = -1;
+
   function summary() {
     const totalElapsed = Date.now() - start;
     let speed = Math.floor((received * size * 8) / (totalElapsed / 1000));
@@ -111,6 +114,7 @@ function Client() {
 
     console.log('Done.\n\n%d packets sent in %dms', sequence, totalElapsed);
     console.log('%d received, %d corrupt, %d dropped', received, corrupt, dropped);
+    console.log('%dms maximum elapsed time, %dms minimum elapsed time', maximumTime, minimumTime);
     console.log('Speed: %s', speed);
 
     process.exit(0);
@@ -144,6 +148,10 @@ function Client() {
 
     if (buffer.compare(msg) === 0) {
       elapsed = Date.now() - elapsed;
+
+      minimumTime = Math.min(minimumTime, elapsed);
+      maximumTime = Math.max(maximumTime, elapsed);
+
       //console.log('Packet #%d, %dms', sequence, elapsed);
       received++;
     } else {
