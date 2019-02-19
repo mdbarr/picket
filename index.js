@@ -9,6 +9,10 @@ const minimist = require('minimist');
 
 //////////
 
+Number.prototype.format = function() {
+  return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+};
+
 const options = minimist(process.argv.slice(2));
 
 const target = options.target || '192.168.0.100';
@@ -112,9 +116,9 @@ function Client() {
       replace('B', 'bps').
       replace(/\s/g, '');
 
-    console.log('Done.\n\n%d packets sent in %dms', sequence, totalElapsed);
-    console.log('%d received, %d corrupt, %d dropped', received, corrupt, dropped);
-    console.log('%dms maximum elapsed time, %dms minimum elapsed time', maximumTime, minimumTime);
+    console.log('Done.\n\n%s packets sent in %sms', sequence.format(), totalElapsed.format());
+    console.log('%s received, %s corrupt, %s dropped', received.format(), corrupt.format(), dropped.format());
+    console.log('%sms longest round-trip time, %sms shortest round-trip time', maximumTime.format(), minimumTime.format());
     console.log('Speed: %s', speed);
 
     process.exit(0);
@@ -164,10 +168,17 @@ function Client() {
 
   socket.on('listening', () => {
     console.log(banner);
+    const timestamp = new Date();
+    const timeString = timestamp.toDateString() + ' ' +
+          timestamp.toTimeString().
+          replace(/(\(.*\))/, '').
+          replace(/(GMT-\d\d\d\d)/, '').
+          trim();
+
     if (count === -1) {
-      console.log('Picket sending for %s to %s:%d...', options.time, target, targetPort);
+      console.log('[%s] Picket sending for %s to %s:%d...', timeString, options.time, target, targetPort);
     } else {
-      console.log('Picket sending %d to %s:%d...', count, target, targetPort);
+      console.log('[%s] Picket sending %d to %s:%d...', timeString, count, target, targetPort);
     }
     start = Date.now();
     setImmediate(send);
