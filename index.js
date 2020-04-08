@@ -15,7 +15,7 @@ Number.prototype.format = function() {
 
 const options = minimist(process.argv.slice(2));
 
-const target = options.target || '192.168.0.100';
+const target = options.target || '192.168.192.1';
 const targetPort = parseInt(options.port || 11111);
 const listenPort = parseInt(options.listen || 11112);
 
