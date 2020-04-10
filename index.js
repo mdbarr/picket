@@ -5,15 +5,14 @@ const dgram = require('dgram');
 const socket = dgram.createSocket('udp4');
 
 const barrkeep = require('barrkeep');
-const minimist = require('minimist');
+
+const options = require('yargs').argv;
 
 //////////
 
 Number.prototype.format = function() {
   return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
 };
-
-const options = minimist(process.argv.slice(2));
 
 const target = options.target || '192.168.192.1';
 const targetPort = parseInt(options.port || 11111);
@@ -171,9 +170,9 @@ function Client() {
     const timestamp = new Date();
     const timeString = timestamp.toDateString() + ' ' +
           timestamp.toTimeString().
-          replace(/(\(.*\))/, '').
-          replace(/(GMT-\d\d\d\d)/, '').
-          trim();
+            replace(/(\(.*\))/, '').
+            replace(/(GMT-\d\d\d\d)/, '').
+            trim();
 
     if (count === -1) {
       console.log('[%s] Picket sending for %s to %s:%d...', timeString, options.time, target, targetPort);
